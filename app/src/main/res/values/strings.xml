@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">sync.calendar</string>
+    <string name="add_reminder">Напоминание</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="text_hint">Позвонить маме</string>
+    <string name="pick_folder">Выбрать папку Syncthing</string>
+    <string name="pick_date">Дата</string>
+    <string name="pick_time">Время</string>
+    <string name="new_reminder_title">Новое напоминание</string>
+    <string name="empty_list">Пусто. Нажми «Напоминание», чтобы добавить.</string>
+    <string name="devices_label">Сработает на устройствах</string>
+    <string name="this_device_suffix">(это устройство)</string>
+</resources>
