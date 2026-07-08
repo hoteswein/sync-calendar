@@ -13,6 +13,13 @@
          запрашиваемого в рантайме (см. MainActivity) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Полноэкранный попап поверх блокировки при срабатывании напоминания.
+         На Android 14+ авто-выдаётся только через декларацию в Google Play,
+         но это ограничение самого Play Store — при сайдлоаде не действует.
+         Разрешение объявлено, а в коде дополнительно проверяем
+         canUseFullScreenIntent() и аккуратно деградируем, если недоступно. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -32,6 +39,16 @@
         <receiver
             android:name=".AlarmReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name=".AlarmActionReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".ReminderAlarmActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.SyncCalendar" />
 
         <receiver
             android:name=".BootReceiver"

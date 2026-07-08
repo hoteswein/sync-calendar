@@ -26,6 +26,17 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
+            <ImageButton
+                android:id="@+id/soundButton"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/choose_sound"
+                android:padding="4dp"
+                android:tint="@color/text_dim"
+                app:srcCompat="@drawable/ic_sound" />
+
             <TextView
                 android:id="@+id/deviceNameText"
                 android:layout_width="wrap_content"

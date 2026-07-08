@@ -11,4 +11,16 @@
     <string name="empty_list">Пусто. Нажми «Напоминание», чтобы добавить.</string>
     <string name="devices_label">Сработает на устройствах</string>
     <string name="this_device_suffix">(это устройство)</string>
+
+    <string name="dismiss">Завершить</string>
+    <string name="snooze_5min">Отложить на 5 минут</string>
+    <string name="snooze_pick">Отложить на…</string>
+    <string name="snooze_dialog_title">На сколько отложить?</string>
+    <string name="snooze_custom">Написать вручную</string>
+    <string name="snooze_custom_hint">Минут</string>
+    <string name="snooze_confirm">Отложить</string>
+
+    <string name="choose_sound">Звук напоминания</string>
+    <string name="fsi_hint">Разреши полноэкранные уведомления, чтобы напоминания включали экран поверх блокировки: Настройки → Приложения → sync.calendar → Особый доступ → Полноэкранные уведомления.</string>
+    <string name="fsi_open_settings">Открыть настройки</string>
 </resources>

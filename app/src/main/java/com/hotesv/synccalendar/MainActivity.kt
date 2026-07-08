@@ -3,16 +3,21 @@ package com.hotesv.synccalendar
 import android.Manifest
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.app.NotificationManager
 import android.app.TimePickerDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -38,6 +43,16 @@ class MainActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { /* если откажут — просто не будет уведомлений, приложение не падает */ }
 
+    private val soundPickerLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val uri = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            Prefs.setSoundUri(this, uri?.toString())
+            NotificationChannelHelper.recreateChannel(this)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -48,9 +63,46 @@ class MainActivity : AppCompatActivity() {
             adapter = this@MainActivity.adapter
         }
         findViewById<android.view.View>(R.id.addButton).setOnClickListener { showAddDialog() }
+        findViewById<ImageButton>(R.id.soundButton).setOnClickListener { openSoundPicker() }
 
         requestNotificationPermissionIfNeeded()
+        checkFullScreenIntentPermission()
         ensureDeviceNameThenFolder()
+    }
+
+    // ---------- звук напоминания ----------
+
+    private fun openSoundPicker() {
+        val current = Prefs.getSoundUri(this)?.let { Uri.parse(it) }
+            ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION)
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, current)
+        }
+        soundPickerLauncher.launch(intent)
+    }
+
+    /** На Android 14+ полноэкранный попап может требовать отдельного
+     *  разрешения (спец. доступ) — если его нет, предлагаем открыть
+     *  настройки, но не блокируем работу приложения. */
+    private fun checkFullScreenIntentPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (!manager.canUseFullScreenIntent()) {
+                AlertDialog.Builder(this)
+                    .setMessage(R.string.fsi_hint)
+                    .setPositiveButton(R.string.fsi_open_settings) { _, _ ->
+                        val settingsIntent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                            data = Uri.fromParts("package", packageName, null)
+                        }
+                        try { startActivity(settingsIntent) } catch (e: Exception) { }
+                    }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+            }
+        }
     }
 
     override fun onResume() {

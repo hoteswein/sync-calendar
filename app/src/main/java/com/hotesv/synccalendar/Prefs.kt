@@ -12,6 +12,7 @@ object Prefs {
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_DEVICE_NAME = "device_name"
     private const val KEY_FOLDER_URI = "folder_uri"
+    private const val KEY_SOUND_URI = "sound_uri"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -40,5 +41,13 @@ object Prefs {
 
     fun setFolderUri(context: Context, uri: String) {
         prefs(context).edit().putString(KEY_FOLDER_URI, uri).apply()
+    }
+
+    /** null означает "звук по умолчанию" (системный звук уведомлений) */
+    fun getSoundUri(context: Context): String? =
+        prefs(context).getString(KEY_SOUND_URI, null)
+
+    fun setSoundUri(context: Context, uri: String?) {
+        prefs(context).edit().putString(KEY_SOUND_URI, uri).apply()
     }
 }
