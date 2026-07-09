@@ -7,7 +7,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class ReminderAdapter(
-    private val onDelete: (Reminder) -> Unit
+    private val onDelete: (Reminder) -> Unit,
+    private val onEdit: (Reminder) -> Unit
 ) : RecyclerView.Adapter<ReminderAdapter.VH>() {
 
     private var items: List<Reminder> = emptyList()
@@ -43,5 +44,7 @@ class ReminderAdapter(
             devicesById[id]?.name ?: id.take(6)
         }
         holder.delete.setOnClickListener { onDelete(r) }
+        // тап по всей строке (кроме кнопки удаления) — редактирование
+        holder.itemView.setOnClickListener { onEdit(r) }
     }
 }

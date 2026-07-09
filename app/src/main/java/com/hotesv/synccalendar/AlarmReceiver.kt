@@ -1,18 +1,16 @@
 package com.hotesv.synccalendar
 
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        NotificationChannelHelper.ensureChannel(context)
+        val channelId = NotificationChannelHelper.ensureChannel(context)
 
         val text = intent.getStringExtra("text") ?: "Напоминание"
         val id = intent.getStringExtra("id") ?: "0"
@@ -59,7 +57,7 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(context, NotificationChannelHelper.CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_alarm)
             .setContentTitle(context.getString(R.string.app_name))
             .setContentText(text)
@@ -68,24 +66,17 @@ class AlarmReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(fullScreenPendingIntent)
             .setAutoCancel(true)
+            .setFullScreenIntent(fullScreenPendingIntent, true)
             .addAction(R.drawable.ic_alarm, context.getString(R.string.dismiss), dismissPendingIntent)
             .addAction(R.drawable.ic_alarm, context.getString(R.string.snooze_5min), snooze5PendingIntent)
             .addAction(R.drawable.ic_alarm, context.getString(R.string.snooze_pick), snoozeMenuPendingIntent)
 
-        // На Android 14+ полноэкранный интент может быть не разрешён (спец. доступ,
-        // авто-выдаётся только "будильникам/звонилкам" через Google Play — при
-        // сайдлоаде это ограничение Play Store не применяется, но проверяем честно).
-        val canFullScreen =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                manager.canUseFullScreenIntent()
-            } else {
-                true
-            }
-
-        if (canFullScreen) {
-            builder.setFullScreenIntent(fullScreenPendingIntent, true)
-        }
+        // Раньше здесь была проверка canUseFullScreenIntent() перед вызовом
+        // setFullScreenIntent — убрал её как условие: по документации Android,
+        // если разрешения нет, система просто покажет обычное уведомление
+        // без попапа, а не упадёт. Так надёжнее, чем полагаться на то, что
+        // сам метод canUseFullScreenIntent() всегда точно отражает реальность
+        // на конкретном устройстве/прошивке.
 
         NotificationManagerCompat.from(context).notify(id.hashCode(), builder.build())
     }

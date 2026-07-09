@@ -9,29 +9,40 @@ import android.net.Uri
 
 /** Канал уведомлений и его звук.
  *
- *  На Android 8+ звук канала фиксируется один раз при создании и не может
- *  быть изменён у существующего канала — поэтому при смене звука в
- *  настройках нужно удалить канал и создать заново (recreateChannel),
- *  а не просто обновить его. */
+ *  ВАЖНО: на Android 8+ звук канала фиксируется один раз при создании.
+ *  Удаление канала и создание нового ПОД ТЕМ ЖЕ id не помогает — система
+ *  документированно "восстанавливает" старый канал со старыми
+ *  настройками вместо применения новых (это была причина бага: звук не
+ *  менялся). Поэтому здесь id канала зависит от самого звука — при
+ *  смене звука это всегда новый, ранее не использовавшийся id. */
 object NotificationChannelHelper {
-    const val CHANNEL_ID = "reminders"
+    private const val PREFIX = "reminders_v"
 
-    /** Создаёт канал, если его ещё нет — с текущим звуком из настроек. */
-    fun ensureChannel(context: Context) {
+    fun channelIdFor(context: Context): String {
+        val key = Prefs.getSoundUri(context)?.hashCode() ?: 0
+        return PREFIX + key
+    }
+
+    /** Создаёт канал под текущим (на основе текущего звука) id, если его ещё нет. */
+    fun ensureChannel(context: Context): String {
+        val id = channelIdFor(context)
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-            manager.createNotificationChannel(buildChannel(context))
+        if (manager.getNotificationChannel(id) == null) {
+            manager.createNotificationChannel(buildChannel(context, id))
         }
+        return id
     }
 
-    /** Вызывать сразу после того, как пользователь выбрал новый звук. */
-    fun recreateChannel(context: Context) {
+    /** Вызывать сразу после того, как пользователь выбрал новый звук
+     *  (Prefs уже обновлён к этому моменту) — создаёт канал под новым id
+     *  и подчищает канал под старым id, чтобы не копились "хвосты". */
+    fun onSoundChanged(context: Context, previousChannelId: String) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.deleteNotificationChannel(CHANNEL_ID)
-        manager.createNotificationChannel(buildChannel(context))
+        manager.deleteNotificationChannel(previousChannelId)
+        ensureChannel(context)
     }
 
-    private fun buildChannel(context: Context): NotificationChannel {
+    private fun buildChannel(context: Context, id: String): NotificationChannel {
         val soundUri: Uri = Prefs.getSoundUri(context)?.let { Uri.parse(it) }
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
@@ -40,7 +51,7 @@ object NotificationChannelHelper {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
 
-        return NotificationChannel(CHANNEL_ID, "Напоминания", NotificationManager.IMPORTANCE_HIGH).apply {
+        return NotificationChannel(id, "Напоминания", NotificationManager.IMPORTANCE_HIGH).apply {
             setSound(soundUri, attrs)
             enableLights(true)
             enableVibration(true)

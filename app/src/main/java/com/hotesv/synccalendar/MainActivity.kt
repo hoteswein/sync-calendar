@@ -47,9 +47,10 @@ class MainActivity : AppCompatActivity() {
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
+            val previousChannelId = NotificationChannelHelper.channelIdFor(this)
             val uri = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             Prefs.setSoundUri(this, uri?.toString())
-            NotificationChannelHelper.recreateChannel(this)
+            NotificationChannelHelper.onSoundChanged(this, previousChannelId)
         }
     }
 
@@ -57,16 +58,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        adapter = ReminderAdapter(onDelete = ::deleteReminder)
+        adapter = ReminderAdapter(onDelete = ::deleteReminder, onEdit = { showReminderDialog(it) })
         findViewById<RecyclerView>(R.id.remindersRecycler).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
         }
-        findViewById<android.view.View>(R.id.addButton).setOnClickListener { showAddDialog() }
+        findViewById<android.view.View>(R.id.addButton).setOnClickListener { showReminderDialog() }
         findViewById<ImageButton>(R.id.soundButton).setOnClickListener { openSoundPicker() }
 
         requestNotificationPermissionIfNeeded()
-        checkFullScreenIntentPermission()
         ensureDeviceNameThenFolder()
     }
 
@@ -84,29 +84,39 @@ class MainActivity : AppCompatActivity() {
         soundPickerLauncher.launch(intent)
     }
 
-    /** На Android 14+ полноэкранный попап может требовать отдельного
-     *  разрешения (спец. доступ) — если его нет, предлагаем открыть
-     *  настройки, но не блокируем работу приложения. */
-    private fun checkFullScreenIntentPermission() {
+    /** Постоянная (не одноразовая) строка статуса — так её можно проверить
+     *  в любой момент, а не только увидеть один раз при первом запуске.
+     *  Обновляется в onResume, в том числе после возврата из настроек. */
+    private fun updateFsiStatusRow() {
+        val statusView = findViewById<TextView>(R.id.fsiStatusText)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (!manager.canUseFullScreenIntent()) {
-                AlertDialog.Builder(this)
-                    .setMessage(R.string.fsi_hint)
-                    .setPositiveButton(R.string.fsi_open_settings) { _, _ ->
-                        val settingsIntent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
-                            data = Uri.fromParts("package", packageName, null)
-                        }
-                        try { startActivity(settingsIntent) } catch (e: Exception) { }
+            val allowed = manager.canUseFullScreenIntent()
+            statusView.visibility = android.view.View.VISIBLE
+            if (allowed) {
+                statusView.text = getString(R.string.fsi_status_ok)
+                statusView.setTextColor(ContextCompat.getColor(this, R.color.teal))
+                statusView.setOnClickListener(null)
+                statusView.isClickable = false
+            } else {
+                statusView.text = getString(R.string.fsi_status_bad)
+                statusView.setTextColor(ContextCompat.getColor(this, R.color.danger))
+                statusView.isClickable = true
+                statusView.setOnClickListener {
+                    val settingsIntent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                        data = Uri.fromParts("package", packageName, null)
                     }
-                    .setNegativeButton(R.string.cancel, null)
-                    .show()
+                    try { startActivity(settingsIntent) } catch (e: Exception) { }
+                }
             }
+        } else {
+            statusView.visibility = android.view.View.GONE
         }
     }
 
     override fun onResume() {
         super.onResume()
+        updateFsiStatusRow()
         startAutoRefresh()
     }
 
@@ -208,9 +218,9 @@ class MainActivity : AppCompatActivity() {
         refreshNow()
     }
 
-    // ---------- добавление напоминания ----------
+    // ---------- добавление / редактирование напоминания ----------
 
-    private fun showAddDialog() {
+    private fun showReminderDialog(existing: Reminder? = null) {
         val r = repo ?: return
         val view = layoutInflater.inflate(R.layout.dialog_add_reminder, null)
         val textInput = view.findViewById<EditText>(R.id.textInput)
@@ -218,10 +228,15 @@ class MainActivity : AppCompatActivity() {
         val timeButton = view.findViewById<android.widget.Button>(R.id.timeButton)
         val devicesContainer = view.findViewById<android.widget.LinearLayout>(R.id.devicesContainer)
 
-        var chosenDate = LocalDate.now()
-        var chosenTime = LocalTime.of(9, 0)
         val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
+
+        var chosenDate = existing?.date?.let { runCatching { LocalDate.parse(it, dateFmt) }.getOrNull() }
+            ?: LocalDate.now()
+        var chosenTime = existing?.time?.let { runCatching { LocalTime.parse(it, timeFmt) }.getOrNull() }
+            ?: LocalTime.of(9, 0)
+
+        if (existing != null) textInput.setText(existing.text)
 
         fun refreshButtons() {
             dateButton.text = chosenDate.format(dateFmt)
@@ -248,14 +263,14 @@ class MainActivity : AppCompatActivity() {
         devices.forEach { d ->
             val cb = CheckBox(this).apply {
                 text = d.name + if (d.id == myId) " " + getString(R.string.this_device_suffix) else ""
-                isChecked = d.id == myId
+                isChecked = existing?.targetDeviceIds?.contains(d.id) ?: (d.id == myId)
             }
             devicesContainer.addView(cb)
             checkboxes.add(cb to d.id)
         }
 
         AlertDialog.Builder(this)
-            .setTitle(R.string.new_reminder_title)
+            .setTitle(if (existing == null) R.string.new_reminder_title else R.string.edit_reminder_title)
             .setView(view)
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.save) { _, _ ->
@@ -264,13 +279,24 @@ class MainActivity : AppCompatActivity() {
                 val targets = checkboxes.filter { it.first.isChecked }.map { it.second }
                     .ifEmpty { listOf(myId) }
 
-                val reminder = Reminder.create(
-                    text = text,
-                    date = chosenDate.format(dateFmt),
-                    time = chosenTime.format(timeFmt),
-                    targets = targets,
-                    myId = myId
-                )
+                val reminder = if (existing == null) {
+                    Reminder.create(
+                        text = text,
+                        date = chosenDate.format(dateFmt),
+                        time = chosenTime.format(timeFmt),
+                        targets = targets,
+                        myId = myId
+                    )
+                } else {
+                    // отменяем старый будильник перед пересохранением — время могло поменяться
+                    AlarmScheduler.cancel(this, existing)
+                    existing.copy(
+                        text = text,
+                        date = chosenDate.format(dateFmt),
+                        time = chosenTime.format(timeFmt),
+                        targetDeviceIds = targets
+                    )
+                }
                 r.saveReminder(reminder)
                 if (targets.contains(myId)) AlarmScheduler.schedule(this, reminder)
                 refreshNow()

@@ -1,14 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- ушки календаря -->
+    <path android:fillColor="#8891A3" android:pathData="M42,25 h6 v12 h-6 z" />
+    <path android:fillColor="#8891A3" android:pathData="M60,25 h6 v12 h-6 z" />
+
+    <!-- тело календаря -->
     <path
-        android:pathData="M24,54 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 z"
-        android:strokeColor="#5CC7BD"
-        android:strokeWidth="5"
-        android:fillColor="#00000000" />
+        android:fillColor="#E9E5DB"
+        android:pathData="M35,32 H73 A6,6 0 0 1 79,38 V72 A6,6 0 0 1 73,78 H35 A6,6 0 0 1 29,72 V38 A6,6 0 0 1 35,32 Z" />
+
+    <!-- шапка календаря -->
     <path
-        android:pathData="M44,54 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 z"
-        android:fillColor="#E7A33D" />
+        android:fillColor="#E7A33D"
+        android:pathData="M35,32 H73 A6,6 0 0 1 79,38 V44 H29 V38 A6,6 0 0 1 35,32 Z" />
+
+    <!-- стрелки синхронизации поверх -->
+    <group
+        android:scaleX="2.4"
+        android:scaleY="2.4"
+        android:translateX="25.2"
+        android:translateY="25.2">
+        <path
+            android:fillColor="#5CC7BD"
+            android:pathData="M12,4V1L8,5l4,4V6c3.31,0,6,2.69,6,6c0,1.01 -0.25,1.97 -0.7,2.8l1.46,1.46C19.54,15.03 20,13.57 20,12C20,7.58 16.42,4 12,4z M12,18c-3.31,0 -6,-2.69 -6,-6c0,-1.01 0.25,-1.97 0.7,-2.8L5.24,7.74C4.46,8.97 4,10.43 4,12c0,4.42 3.58,8 8,8v3l4,-4l-4,-4V18z" />
+    </group>
+
 </vector>
