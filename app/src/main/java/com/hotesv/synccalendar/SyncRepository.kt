@@ -47,6 +47,12 @@ class SyncRepository(private val context: Context, private val treeUri: Uri) {
             .mapNotNull { f -> readText(f)?.let { runCatching { Reminder.fromJson(JSONObject(it)) }.getOrNull() } }
     }
 
+    fun getReminder(id: String): Reminder? {
+        val d = dir("reminders") ?: return null
+        val f = d.findFile("$id.json") ?: return null
+        return readText(f)?.let { runCatching { Reminder.fromJson(JSONObject(it)) }.getOrNull() }
+    }
+
     fun saveDevice(device: DeviceInfo) {
         val d = dir("devices") ?: return
         writeText(d, "${device.id}.json", device.toJson().toString())

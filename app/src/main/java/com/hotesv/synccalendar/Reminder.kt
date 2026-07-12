@@ -42,7 +42,9 @@ data class Reminder(
     val time: String,       // "HH:mm"
     val targetDeviceIds: List<String>,
     val createdBy: String,
-    val createdAt: String
+    val createdAt: String,
+    val enabled: Boolean = true,        // выключенное напоминание хранится, но не звонит
+    val snoozedUntil: Long? = null      // epoch millis; null = не отложено сейчас
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -52,6 +54,8 @@ data class Reminder(
         put("target_device_ids", JSONArray(targetDeviceIds))
         put("created_by", createdBy)
         put("created_at", createdAt)
+        put("enabled", enabled)
+        if (snoozedUntil != null) put("snoozed_until", snoozedUntil) else remove("snoozed_until")
     }
 
     companion object {
@@ -68,7 +72,10 @@ data class Reminder(
                 time = o.optString("time", "09:00"),
                 targetDeviceIds = ids,
                 createdBy = o.optString("created_by", ""),
-                createdAt = o.optString("created_at", "")
+                createdAt = o.optString("created_at", ""),
+                // старые файлы без этих полей — enabled по умолчанию true, не отложено
+                enabled = if (o.has("enabled")) o.optBoolean("enabled", true) else true,
+                snoozedUntil = if (o.has("snoozed_until")) o.optLong("snoozed_until") else null
             )
         }
 

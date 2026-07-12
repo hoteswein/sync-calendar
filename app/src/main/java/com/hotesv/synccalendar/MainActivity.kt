@@ -1,7 +1,6 @@
 package com.hotesv.synccalendar
 
 import android.Manifest
-import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.NotificationManager
 import android.app.TimePickerDialog
@@ -14,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.widget.CheckBox
 import android.widget.EditText
@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -58,13 +59,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        adapter = ReminderAdapter(onDelete = ::deleteReminder, onEdit = { showReminderDialog(it) })
+        adapter = ReminderAdapter(
+            onDelete = ::deleteReminder,
+            onEdit = { showReminderDialog(it) },
+            onToggleEnabled = ::toggleEnabled,
+            onCancelSnooze = ::cancelSnooze
+        )
         findViewById<RecyclerView>(R.id.remindersRecycler).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
         }
         findViewById<android.view.View>(R.id.addButton).setOnClickListener { showReminderDialog() }
         findViewById<ImageButton>(R.id.soundButton).setOnClickListener { openSoundPicker() }
+        findViewById<TextView>(R.id.folderPathText).setOnClickListener { folderPicker.launch(null) }
 
         requestNotificationPermissionIfNeeded()
         ensureDeviceNameThenFolder()
@@ -114,9 +121,64 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Стандартный Android-механизм — свой у каждого приложения,
+     *  никакого отношения к OEM-автозапуску не имеет. */
+    private fun updateBatteryStatusRow() {
+        val statusView = findViewById<TextView>(R.id.batteryStatusText)
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val ignoring = pm.isIgnoringBatteryOptimizations(packageName)
+        if (ignoring) {
+            statusView.text = getString(R.string.battery_status_ok)
+            statusView.setTextColor(ContextCompat.getColor(this, R.color.teal))
+            statusView.setOnClickListener(null)
+            statusView.isClickable = false
+        } else {
+            statusView.text = getString(R.string.battery_status_bad)
+            statusView.setTextColor(ContextCompat.getColor(this, R.color.danger))
+            statusView.isClickable = true
+            statusView.setOnClickListener {
+                try {
+                    startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:$packageName")
+                    })
+                } catch (e: Exception) { }
+            }
+        }
+    }
+
+    /** Только для Xiaomi/Redmi/POCO (MIUI/HyperOS) — у остальных
+     *  производителей своя логика автозапуска и общего API для неё нет,
+     *  это неофициальный, но давно устоявшийся способ. Если экран не
+     *  найдётся (другая версия MIUI) — просто ничего не произойдёт. */
+    private fun setupAutostartButton() {
+        val button = findViewById<TextView>(R.id.autostartButton)
+        val isXiaomiFamily = Build.MANUFACTURER.equals("Xiaomi", ignoreCase = true) ||
+            Build.MANUFACTURER.equals("Redmi", ignoreCase = true) ||
+            Build.MANUFACTURER.equals("POCO", ignoreCase = true)
+        if (!isXiaomiFamily) {
+            button.visibility = android.view.View.GONE
+            return
+        }
+        button.visibility = android.view.View.VISIBLE
+        button.setOnClickListener {
+            try {
+                startActivity(Intent().apply {
+                    component = android.content.ComponentName(
+                        "com.miui.securitycenter",
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                    )
+                })
+            } catch (e: Exception) {
+                Toast.makeText(this, R.string.autostart_not_found, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         updateFsiStatusRow()
+        updateBatteryStatusRow()
+        setupAutostartButton()
         startAutoRefresh()
     }
 
@@ -145,7 +207,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val input = EditText(this).apply { setText(Build.MODEL ?: "Android") }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("Имя этого устройства")
             .setView(input)
             .setCancelable(false)
@@ -177,7 +239,8 @@ class MainActivity : AppCompatActivity() {
             Prefs.setFolderUri(this, uri.toString())
         }
         repo = SyncRepository(this, uri)
-        findViewById<TextView>(R.id.folderPathText).text = uri.path ?: uri.toString()
+        findViewById<TextView>(R.id.folderPathText).text =
+            (uri.path ?: uri.toString()) + " · " + getString(R.string.tap_to_change)
 
         val myId = Prefs.getOrCreateDeviceId(this)
         val myName = Prefs.getDeviceName(this)
@@ -215,6 +278,20 @@ class MainActivity : AppCompatActivity() {
     private fun deleteReminder(reminder: Reminder) {
         repo?.deleteReminder(reminder.id)
         AlarmScheduler.cancel(this, reminder)
+        refreshNow()
+    }
+
+    private fun toggleEnabled(reminder: Reminder, enabled: Boolean) {
+        val updated = reminder.copy(enabled = enabled)
+        repo?.saveReminder(updated)
+        AlarmScheduler.schedule(this, updated)
+        refreshNow()
+    }
+
+    private fun cancelSnooze(reminder: Reminder) {
+        val updated = reminder.copy(snoozedUntil = null)
+        repo?.saveReminder(updated)
+        AlarmScheduler.schedule(this, updated)
         refreshNow()
     }
 
@@ -269,7 +346,7 @@ class MainActivity : AppCompatActivity() {
             checkboxes.add(cb to d.id)
         }
 
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(if (existing == null) R.string.new_reminder_title else R.string.edit_reminder_title)
             .setView(view)
             .setNegativeButton(R.string.cancel, null)

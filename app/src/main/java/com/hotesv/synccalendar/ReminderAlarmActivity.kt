@@ -18,6 +18,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /** Показывается поверх блокировки экрана и всех приложений, когда
  *  срабатывает напоминание — как обычный будильник. Крутит звук по
@@ -101,7 +102,7 @@ class ReminderAlarmActivity : AppCompatActivity() {
 
     private fun showSnoozeMenu() {
         val labels = (SNOOZE_OPTIONS.map { it.second } + getString(R.string.snooze_custom)).toTypedArray()
-        android.app.AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.snooze_dialog_title)
             .setItems(labels) { _, which ->
                 if (which < SNOOZE_OPTIONS.size) {
@@ -119,7 +120,7 @@ class ReminderAlarmActivity : AppCompatActivity() {
             inputType = InputType.TYPE_CLASS_NUMBER
             hint = getString(R.string.snooze_custom_hint)
         }
-        android.app.AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.snooze_custom)
             .setView(input)
             .setPositiveButton(R.string.snooze_confirm) { _, _ ->

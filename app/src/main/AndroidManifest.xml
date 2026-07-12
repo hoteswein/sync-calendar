@@ -19,6 +19,7 @@
          Разрешение объявлено, а в коде дополнительно проверяем
          canUseFullScreenIntent() и аккуратно деградируем, если недоступно. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="true"
