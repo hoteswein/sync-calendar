@@ -1,10 +1,18 @@
 <resources>
-    <style name="Theme.SyncCalendar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.SyncCalendar" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimary">@color/amber</item>
         <item name="colorPrimaryDark">@color/bg</item>
         <item name="colorSecondary">@color/teal</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text</item>
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:textColorPrimary">@color/text</item>
         <item name="android:textColorSecondary">@color/text_dim</item>
+    </style>
+
+    <style name="SettingsDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:background">@color/border</item>
     </style>
 </resources>

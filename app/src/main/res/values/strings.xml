@@ -27,7 +27,17 @@
 
     <string name="battery_status_ok">✓ Энергосбережение не мешает будильникам</string>
     <string name="battery_status_bad">⚠ Включена оптимизация батареи — нажми, чтобы отключить для этого приложения</string>
-    <string name="autostart_button">⚠ MIUI/HyperOS: проверь автозапуск — нажми, чтобы открыть</string>
     <string name="autostart_not_found">Не нашёл экран автозапуска — открой вручную: Настройки → Приложения → Разрешения → Автозапуск</string>
     <string name="tap_to_change">нажми, чтобы сменить</string>
+
+    <string name="settings_title">Настройки</string>
+    <string name="settings_folder_label">Папка синхронизации</string>
+    <string name="settings_sound_hint">Звук по умолчанию для всех напоминаний</string>
+    <string name="settings_fsi_label">Полноэкранные напоминания</string>
+    <string name="settings_battery_label">Энергосбережение</string>
+    <string name="settings_autostart_label">Автозапуск (MIUI/HyperOS)</string>
+    <string name="autostart_hint_neutral">Проверить состояние программно нельзя — если будильники ненадёжны, зайди и убедись сам, что автозапуск разрешён</string>
+    <string name="settings_service_label">Служба надёжности</string>
+    <string name="settings_service_hint">Держит приложение в памяти постоянным уведомлением — как у автоматизаторов вроде MacroDroid. Расходует немного батареи, но заметно снижает риск, что систем убьёт процесс.</string>
+    <string name="service_notification_text">Активна — напоминания надёжнее сработают в фоне</string>
 </resources>

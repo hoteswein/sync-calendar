@@ -13,6 +13,7 @@ object Prefs {
     private const val KEY_DEVICE_NAME = "device_name"
     private const val KEY_FOLDER_URI = "folder_uri"
     private const val KEY_SOUND_URI = "sound_uri"
+    private const val KEY_SERVICE_ENABLED = "reliability_service_enabled"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -49,5 +50,12 @@ object Prefs {
 
     fun setSoundUri(context: Context, uri: String?) {
         prefs(context).edit().putString(KEY_SOUND_URI, uri).apply()
+    }
+
+    fun isServiceEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_SERVICE_ENABLED, false)
+
+    fun setServiceEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_SERVICE_ENABLED, enabled).apply()
     }
 }

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.ContextCompat
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -15,5 +16,9 @@ class BootReceiver : BroadcastReceiver() {
 
         val reminders = repo.listReminders()
         AlarmScheduler.rescheduleAll(context, myId, reminders)
+
+        if (Prefs.isServiceEnabled(context)) {
+            ContextCompat.startForegroundService(context, Intent(context, ReliabilityService::class.java))
+        }
     }
 }
