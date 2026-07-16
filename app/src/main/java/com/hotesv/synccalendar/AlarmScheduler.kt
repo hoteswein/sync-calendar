@@ -53,7 +53,19 @@ object AlarmScheduler {
         }
         if (trigger <= now) return
 
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pendingIntent(context, reminder))
+        // setAlarmClock — тот же принцип, что у "использовать системный будильник"
+        // в автоматизаторах вроде MacroDroid: система обращается с этим будильником
+        // как с настоящим будильником-часами (обходит Doze/энергосбережение почти
+        // полностью, показывает значок будильника в статус-баре), но срабатывает
+        // ровно тот же наш AlarmReceiver — никакое чужое приложение не открывается.
+        val showIntent = PendingIntent.getActivity(
+            context,
+            reminder.id.hashCode(),
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val info = AlarmManager.AlarmClockInfo(trigger, showIntent)
+        alarmManager.setAlarmClock(info, pendingIntent(context, reminder))
     }
 
     fun cancel(context: Context, reminder: Reminder) {
