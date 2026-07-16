@@ -6,6 +6,14 @@
          Актуально при sideload — Google Play тут вообще не участвует. -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
+    <!-- USE_EXACT_ALARM по спецификации должен выдаваться автоматически и
+         быть невидимым для пользователя — но на устройстве HyperOS/MIUI
+         приложение вообще не появилось в системном списке "Будильники и
+         напоминания", то есть разрешение фактически не работает как надо.
+         SCHEDULE_EXACT_ALARM — другое разрешение, видимое и управляемое
+         пользователем именно через тот экран настроек. Держим оба. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <!-- Чтобы переставить будильники после перезагрузки устройства -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
