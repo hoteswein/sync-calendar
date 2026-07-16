@@ -1,5 +1,6 @@
 package com.hotesv.synccalendar
 
+import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
@@ -50,6 +51,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowFolder).setOnClickListener { folderPicker.launch(null) }
         findViewById<View>(R.id.rowSound).setOnClickListener { openSoundPicker() }
         findViewById<View>(R.id.rowFsi).setOnClickListener { openFsiSettings() }
+        findViewById<View>(R.id.rowExactAlarm).setOnClickListener { openExactAlarmSettings() }
         findViewById<View>(R.id.rowBattery).setOnClickListener { openBatterySettings() }
         findViewById<View>(R.id.rowAutostart).setOnClickListener { openAutostart() }
 
@@ -72,6 +74,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateFsiRow()
+        updateExactAlarmRow()
         updateBatteryRow()
         updateAutostartRowVisibility()
     }
@@ -116,6 +119,35 @@ class SettingsActivity : AppCompatActivity() {
                 data = Uri.fromParts("package", packageName, null)
             })
         } catch (e: Exception) { }
+    }
+
+    // ---------- точные будильники (самая вероятная причина полной тишины) ----------
+
+    private fun updateExactAlarmRow() {
+        val statusView = findViewById<TextView>(R.id.exactAlarmStatusText)
+        val allowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            am.canScheduleExactAlarms()
+        } else {
+            true
+        }
+        if (allowed) {
+            statusView.text = getString(R.string.exact_alarm_status_ok)
+            statusView.setTextColor(ContextCompat.getColor(this, R.color.teal))
+        } else {
+            statusView.text = getString(R.string.exact_alarm_status_bad)
+            statusView.setTextColor(ContextCompat.getColor(this, R.color.danger))
+        }
+    }
+
+    private fun openExactAlarmSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                })
+            } catch (e: Exception) { }
+        }
     }
 
     private fun updateBatteryRow() {

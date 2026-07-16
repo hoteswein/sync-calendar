@@ -34,6 +34,9 @@
     <string name="settings_folder_label">Папка синхронизации</string>
     <string name="settings_sound_hint">Звук по умолчанию для всех напоминаний</string>
     <string name="settings_fsi_label">Полноэкранные напоминания</string>
+    <string name="settings_exact_alarm_label">Точные будильники</string>
+    <string name="exact_alarm_status_ok">✓ Разрешены</string>
+    <string name="exact_alarm_status_bad">⚠ Не разрешены — вот она, вероятная причина тишины. Нажми, чтобы включить</string>
     <string name="settings_battery_label">Энергосбережение</string>
     <string name="settings_autostart_label">Автозапуск (MIUI/HyperOS)</string>
     <string name="autostart_hint_neutral">Проверить состояние программно нельзя — если будильники ненадёжны, зайди и убедись сам, что автозапуск разрешён</string>
