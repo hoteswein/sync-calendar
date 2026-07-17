@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,3 +33,14 @@ jobs:
         with:
           name: sync-calendar-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish latest debug release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-debug
+          name: "Debug build (авто, обновляется каждым пушем)"
+          body: "Последняя debug-сборка. Всегда одна и та же ссылка — старая версия при новом пуше заменяется."
+          prerelease: true
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
