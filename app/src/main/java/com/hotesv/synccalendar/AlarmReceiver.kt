@@ -10,10 +10,20 @@ import androidx.core.app.NotificationManagerCompat
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val channelId = NotificationChannelHelper.ensureChannel(context)
-
         val text = intent.getStringExtra("text") ?: "Напоминание"
         val id = intent.getStringExtra("id") ?: "0"
+        DebugLog.add(context, "AlarmReceiver.onReceive СРАБОТАЛ: id=${id.take(6)} text=\"${text.take(20)}\"")
+
+        try {
+            handleAlarm(context, id, text)
+            DebugLog.add(context, "AlarmReceiver: уведомление успешно отправлено для id=${id.take(6)}")
+        } catch (e: Exception) {
+            DebugLog.add(context, "AlarmReceiver: ОШИБКА ${e.javaClass.simpleName}: ${e.message}")
+        }
+    }
+
+    private fun handleAlarm(context: Context, id: String, text: String) {
+        val channelId = NotificationChannelHelper.ensureChannel(context)
 
         // полноэкранная активность поверх блокировки — на неё же ведёт
         // и обычный тап по уведомлению, и кнопка "Отложить на..."

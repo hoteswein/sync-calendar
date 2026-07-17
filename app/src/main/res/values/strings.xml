@@ -43,4 +43,9 @@
     <string name="settings_service_label">Служба надёжности</string>
     <string name="settings_service_hint">Держит приложение в памяти постоянным уведомлением — как у автоматизаторов вроде MacroDroid. Расходует немного батареи, но заметно снижает риск, что систем убьёт процесс.</string>
     <string name="service_notification_text">Активна — напоминания надёжнее сработают в фоне</string>
+
+    <string name="settings_debug_log_label">Журнал событий</string>
+    <string name="settings_debug_log_hint">Что реально происходит с планированием будильников — для диагностики</string>
+    <string name="debug_log_clear">Очистить</string>
+    <string name="debug_log_close">Закрыть</string>
 </resources>

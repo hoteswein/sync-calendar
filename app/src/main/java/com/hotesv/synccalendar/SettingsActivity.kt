@@ -17,6 +17,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -54,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowExactAlarm).setOnClickListener { openExactAlarmSettings() }
         findViewById<View>(R.id.rowBattery).setOnClickListener { openBatterySettings() }
         findViewById<View>(R.id.rowAutostart).setOnClickListener { openAutostart() }
+        findViewById<View>(R.id.rowDebugLog).setOnClickListener { showDebugLog() }
 
         findViewById<SwitchCompat>(R.id.serviceSwitch).apply {
             isChecked = Prefs.isServiceEnabled(this@SettingsActivity)
@@ -188,5 +190,29 @@ class SettingsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, R.string.autostart_not_found, Toast.LENGTH_LONG).show()
         }
+    }
+
+    // ---------- журнал событий ----------
+
+    private fun showDebugLog() {
+        val scrollView = android.widget.ScrollView(this)
+        val textView = TextView(this).apply {
+            text = DebugLog.read(this@SettingsActivity)
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.text))
+            setPadding(32, 24, 32, 24)
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        scrollView.addView(textView)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_debug_log_label)
+            .setView(scrollView)
+            .setNegativeButton(R.string.debug_log_clear) { _, _ ->
+                DebugLog.clear(this)
+                Toast.makeText(this, "Очищено", Toast.LENGTH_SHORT).show()
+            }
+            .setPositiveButton(R.string.debug_log_close, null)
+            .show()
     }
 }
