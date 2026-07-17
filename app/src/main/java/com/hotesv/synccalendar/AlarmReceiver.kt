@@ -14,6 +14,15 @@ class AlarmReceiver : BroadcastReceiver() {
         val id = intent.getStringExtra("id") ?: "0"
         DebugLog.add(context, "AlarmReceiver.onReceive СРАБОТАЛ: id=${id.take(6)} text=\"${text.take(20)}\"")
 
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+        val locked = km.isKeyguardLocked
+        val canFsi = if (android.os.Build.VERSION.SDK_INT >= 34) {
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager).canUseFullScreenIntent()
+        } else {
+            true
+        }
+        DebugLog.add(context, "состояние в момент звонка: экран заблокирован=$locked, canUseFullScreenIntent=$canFsi")
+
         try {
             handleAlarm(context, id, text)
             DebugLog.add(context, "AlarmReceiver: уведомление успешно отправлено для id=${id.take(6)}")
