@@ -24,9 +24,9 @@ class SyncRepository(private val context: Context, private val treeUri: Uri) {
         null // повреждённый/недописанный файл — пропускаем, не валим весь список
     }
 
-    private fun writeText(dirDoc: DocumentFile, filename: String, content: String) {
+    private fun writeText(dirDoc: DocumentFile, filename: String, content: String, mime: String = "application/json") {
         val existing = dirDoc.findFile(filename)
-        val target = existing ?: dirDoc.createFile("application/json", filename)
+        val target = existing ?: dirDoc.createFile(mime, filename)
         ?: throw IllegalStateException("Не удалось создать $filename")
         context.contentResolver.openOutputStream(target.uri, "wt")?.use {
             it.write(content.toByteArray())
@@ -66,5 +66,24 @@ class SyncRepository(private val context: Context, private val treeUri: Uri) {
     fun deleteReminder(id: String) {
         val d = dir("reminders") ?: return
         d.findFile("$id.json")?.delete()
+    }
+
+    /** Пишет (перезаписывает) журнал этого устройства в подпапку logs/ —
+     *  файл называется как устройство в приложении, поэтому с любого
+     *  другого устройства видно, что происходило у остальных. */
+    fun writeLogFile(deviceNameSafe: String, content: String) {
+        val d = dir("logs") ?: return
+        writeText(d, "$deviceNameSafe.log", content, mime = "text/plain")
+    }
+
+    fun listLogFiles(): List<String> {
+        val d = dir("logs") ?: return emptyList()
+        return d.listFiles().filter { it.name?.endsWith(".log") == true }.mapNotNull { it.name }
+    }
+
+    fun readLogFile(filename: String): String? {
+        val d = dir("logs") ?: return null
+        val f = d.findFile(filename) ?: return null
+        return readText(f)
     }
 }

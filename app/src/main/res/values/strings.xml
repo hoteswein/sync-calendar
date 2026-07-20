@@ -48,4 +48,10 @@
     <string name="settings_debug_log_hint">Что реально происходит с планированием будильников — для диагностики</string>
     <string name="debug_log_clear">Очистить</string>
     <string name="debug_log_close">Закрыть</string>
+
+    <string name="settings_file_log_label">Логирование в файл</string>
+    <string name="settings_file_log_hint">Дублирует журнал в подпапку logs/ общей папки — видно с любого устройства</string>
+    <string name="settings_other_logs_label">Логи других устройств</string>
+    <string name="settings_other_logs_hint">Открыть журналы, присланные другими устройствами через синхронизацию</string>
+    <string name="no_other_logs">Пока ни одного файла в logs/ — либо никто не включил логирование в файл, либо ещё не долетело по синку</string>
 </resources>

@@ -56,6 +56,15 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowBattery).setOnClickListener { openBatterySettings() }
         findViewById<View>(R.id.rowAutostart).setOnClickListener { openAutostart() }
         findViewById<View>(R.id.rowDebugLog).setOnClickListener { showDebugLog() }
+        findViewById<View>(R.id.rowOtherLogs).setOnClickListener { showOtherLogsPicker() }
+
+        findViewById<SwitchCompat>(R.id.fileLogSwitch).apply {
+            isChecked = Prefs.isFileLoggingEnabled(this@SettingsActivity)
+            setOnCheckedChangeListener { _, checked ->
+                Prefs.setFileLoggingEnabled(this@SettingsActivity, checked)
+                if (checked) DebugLog.add(this@SettingsActivity, "логирование в файл включено")
+            }
+        }
 
         findViewById<SwitchCompat>(R.id.serviceSwitch).apply {
             isChecked = Prefs.isServiceEnabled(this@SettingsActivity)
@@ -212,6 +221,48 @@ class SettingsActivity : AppCompatActivity() {
                 DebugLog.clear(this)
                 Toast.makeText(this, "Очищено", Toast.LENGTH_SHORT).show()
             }
+            .setPositiveButton(R.string.debug_log_close, null)
+            .show()
+    }
+
+    private fun showOtherLogsPicker() {
+        val folderUriString = Prefs.getFolderUri(this)
+        if (folderUriString == null) {
+            Toast.makeText(this, R.string.no_other_logs, Toast.LENGTH_LONG).show()
+            return
+        }
+        val repo = SyncRepository(this, Uri.parse(folderUriString))
+        val mySafeName = Prefs.getDeviceName(this)
+            .replace(Regex("[^A-Za-zА-Яа-яЁё0-9 _-]"), "_").ifBlank { "device" }
+        val files = repo.listLogFiles().filter { it != "$mySafeName.log" }
+
+        if (files.isEmpty()) {
+            Toast.makeText(this, R.string.no_other_logs, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_other_logs_label)
+            .setItems(files.toTypedArray()) { _, which ->
+                val content = repo.readLogFile(files[which]) ?: "(не удалось прочитать)"
+                showLogContent(files[which], content)
+            }
+            .show()
+    }
+
+    private fun showLogContent(title: String, content: String) {
+        val scrollView = android.widget.ScrollView(this)
+        val textView = TextView(this).apply {
+            text = content
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(this@SettingsActivity, R.color.text))
+            setPadding(32, 24, 32, 24)
+            typeface = android.graphics.Typeface.MONOSPACE
+        }
+        scrollView.addView(textView)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setView(scrollView)
             .setPositiveButton(R.string.debug_log_close, null)
             .show()
     }

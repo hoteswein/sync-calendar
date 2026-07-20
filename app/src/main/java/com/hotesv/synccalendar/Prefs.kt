@@ -14,6 +14,7 @@ object Prefs {
     private const val KEY_FOLDER_URI = "folder_uri"
     private const val KEY_SOUND_URI = "sound_uri"
     private const val KEY_SERVICE_ENABLED = "reliability_service_enabled"
+    private const val KEY_FILE_LOGGING = "file_logging_enabled"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -57,5 +58,12 @@ object Prefs {
 
     fun setServiceEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_SERVICE_ENABLED, enabled).apply()
+    }
+
+    fun isFileLoggingEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_FILE_LOGGING, false)
+
+    fun setFileLoggingEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_FILE_LOGGING, enabled).apply()
     }
 }
