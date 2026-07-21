@@ -79,9 +79,16 @@ data class Reminder(
             )
         }
 
-        fun create(text: String, date: String, time: String, targets: List<String>, myId: String): Reminder =
+        fun create(
+            text: String,
+            date: String,
+            time: String,
+            targets: List<String>,
+            myId: String,
+            id: String = UUID.randomUUID().toString()
+        ): Reminder =
             Reminder(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 text = text,
                 date = date,
                 time = time,

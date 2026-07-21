@@ -54,4 +54,12 @@
     <string name="settings_other_logs_label">Логи других устройств</string>
     <string name="settings_other_logs_hint">Открыть журналы, присланные другими устройствами через синхронизацию</string>
     <string name="no_other_logs">Пока ни одного файла в logs/ — либо никто не включил логирование в файл, либо ещё не долетело по синку</string>
+
+    <string name="reminder_sound_label">Мелодия для этого напоминания</string>
+    <string name="reminder_sound_default">Обычная</string>
+    <string name="reminder_sound_custom">Своя (нажми, чтобы сменить)</string>
+    <string name="reminder_sound_pending">Будет выбрана при сохранении</string>
+    <string name="reminder_sound_choose">Выбрать мелодию…</string>
+    <string name="reminder_sound_reset">Сделать обычной</string>
+    <string name="reminder_sound_dialog_title">Мелодия напоминания</string>
 </resources>

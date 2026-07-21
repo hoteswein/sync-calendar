@@ -5,6 +5,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -38,6 +39,16 @@ class MainActivity : AppCompatActivity() {
     private val notificationPermissionRequest = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { /* если откажут — просто не будет уведомлений, приложение не падает */ }
+
+    private var onReminderSoundPicked: ((Uri) -> Unit)? = null
+    private val reminderSoundPickerLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val uri = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            if (uri != null) onReminderSoundPicked?.invoke(uri)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -166,6 +177,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun deleteReminder(reminder: Reminder) {
         repo?.deleteReminder(reminder.id)
+        repo?.deleteReminderSound(reminder.id)
         AlarmScheduler.cancel(this, reminder)
         refreshNow()
     }
@@ -188,11 +200,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun showReminderDialog(existing: Reminder? = null) {
         val r = repo ?: return
+        val reminderId = existing?.id ?: java.util.UUID.randomUUID().toString()
         val view = layoutInflater.inflate(R.layout.dialog_add_reminder, null)
         val textInput = view.findViewById<EditText>(R.id.textInput)
         val dateButton = view.findViewById<android.widget.Button>(R.id.dateButton)
         val timeButton = view.findViewById<android.widget.Button>(R.id.timeButton)
         val devicesContainer = view.findViewById<android.widget.LinearLayout>(R.id.devicesContainer)
+        val soundButton = view.findViewById<android.widget.Button>(R.id.reminderSoundButton)
 
         val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val timeFmt = DateTimeFormatter.ofPattern("HH:mm")
@@ -223,6 +237,52 @@ class MainActivity : AppCompatActivity() {
             }, chosenTime.hour, chosenTime.minute, true).show()
         }
 
+        // ---------- мелодия для этого напоминания ----------
+        val hasExistingSound = r.reminderSoundFile(reminderId) != null
+        var pendingSoundUri: Uri? = null
+        var soundCleared = false
+
+        fun refreshSoundButton() {
+            soundButton.text = when {
+                pendingSoundUri != null -> getString(R.string.reminder_sound_pending)
+                soundCleared -> getString(R.string.reminder_sound_default)
+                hasExistingSound -> getString(R.string.reminder_sound_custom)
+                else -> getString(R.string.reminder_sound_default)
+            }
+        }
+        refreshSoundButton()
+
+        soundButton.setOnClickListener {
+            val hasSoundNow = (pendingSoundUri != null) || (hasExistingSound && !soundCleared)
+            val options = if (hasSoundNow) {
+                arrayOf(getString(R.string.reminder_sound_choose), getString(R.string.reminder_sound_reset))
+            } else {
+                arrayOf(getString(R.string.reminder_sound_choose))
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.reminder_sound_dialog_title)
+                .setItems(options) { _, which ->
+                    if (which == 0) {
+                        onReminderSoundPicked = { uri ->
+                            pendingSoundUri = uri
+                            soundCleared = false
+                            refreshSoundButton()
+                        }
+                        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false)
+                            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+                        }
+                        reminderSoundPickerLauncher.launch(intent)
+                    } else {
+                        pendingSoundUri = null
+                        soundCleared = true
+                        refreshSoundButton()
+                    }
+                }
+                .show()
+        }
+
         val myId = Prefs.getOrCreateDeviceId(this)
         val devices = r.listDevices()
         val checkboxes = mutableListOf<Pair<CheckBox, String>>()
@@ -251,7 +311,8 @@ class MainActivity : AppCompatActivity() {
                         date = chosenDate.format(dateFmt),
                         time = chosenTime.format(timeFmt),
                         targets = targets,
-                        myId = myId
+                        myId = myId,
+                        id = reminderId
                     )
                 } else {
                     AlarmScheduler.cancel(this, existing)
@@ -263,9 +324,29 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
                 r.saveReminder(reminder)
+
+                val pickedUri = pendingSoundUri
+                if (pickedUri != null) {
+                    val ext = guessAudioExtension(pickedUri)
+                    r.saveReminderSound(reminderId, pickedUri, ext)
+                } else if (soundCleared) {
+                    r.deleteReminderSound(reminderId)
+                }
+
                 if (targets.contains(myId)) AlarmScheduler.schedule(this, reminder)
                 refreshNow()
             }
             .show()
+    }
+
+    private fun guessAudioExtension(uri: Uri): String {
+        return when (contentResolver.getType(uri)) {
+            "audio/mpeg" -> "mp3"
+            "audio/ogg" -> "ogg"
+            "audio/wav", "audio/x-wav" -> "wav"
+            "audio/mp4", "audio/x-m4a" -> "m4a"
+            "audio/flac" -> "flac"
+            else -> "audio"
+        }
     }
 }

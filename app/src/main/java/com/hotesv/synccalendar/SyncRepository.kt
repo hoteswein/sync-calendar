@@ -86,4 +86,27 @@ class SyncRepository(private val context: Context, private val treeUri: Uri) {
         val f = d.findFile(filename) ?: return null
         return readText(f)
     }
+
+    // ---------- индивидуальный звук напоминания (sounds/<id>.<ext>) ----------
+
+    fun reminderSoundFile(id: String): DocumentFile? {
+        val d = dir("sounds") ?: return null
+        return d.listFiles().firstOrNull { it.name?.startsWith("$id.") == true }
+    }
+
+    fun saveReminderSound(id: String, sourceUri: Uri, extension: String) {
+        val d = dir("sounds") ?: return
+        d.listFiles().filter { it.name?.startsWith("$id.") == true }.forEach { it.delete() }
+        val target = d.createFile("audio/*", "$id.$extension") ?: return
+        context.contentResolver.openInputStream(sourceUri)?.use { input ->
+            context.contentResolver.openOutputStream(target.uri)?.use { output ->
+                input.copyTo(output)
+            }
+        }
+    }
+
+    fun deleteReminderSound(id: String) {
+        val d = dir("sounds") ?: return
+        d.listFiles().filter { it.name?.startsWith("$id.") == true }.forEach { it.delete() }
+    }
 }

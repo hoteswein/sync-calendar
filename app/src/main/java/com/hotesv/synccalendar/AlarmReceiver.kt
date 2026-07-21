@@ -32,13 +32,15 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     private fun handleAlarm(context: Context, id: String, text: String) {
-        val channelId = NotificationChannelHelper.ensureChannel(context)
+        val effectiveSoundUri = reminderSoundUri(context, id)
+        val channelId = NotificationChannelHelper.ensureChannel(context, effectiveSoundUri?.toString() ?: Prefs.getSoundUri(context))
 
         // полноэкранная активность поверх блокировки — на неё же ведёт
         // и обычный тап по уведомлению, и кнопка "Отложить на..."
         val popupIntentBase = Intent(context, ReminderAlarmActivity::class.java).apply {
             putExtra("id", id)
             putExtra("text", text)
+            effectiveSoundUri?.let { putExtra("sound_uri", it.toString()) }
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                 Intent.FLAG_ACTIVITY_NO_HISTORY or
                 Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
@@ -98,5 +100,17 @@ class AlarmReceiver : BroadcastReceiver() {
         // на конкретном устройстве/прошивке.
 
         NotificationManagerCompat.from(context).notify(id.hashCode(), builder.build())
+    }
+
+    /** Ищет свой звук этого напоминания в sounds/<id>.* общей папки.
+     *  null означает "используем общий звук из настроек". */
+    private fun reminderSoundUri(context: Context, id: String): android.net.Uri? {
+        return try {
+            val folderUriString = Prefs.getFolderUri(context) ?: return null
+            val repo = SyncRepository(context, android.net.Uri.parse(folderUriString))
+            repo.reminderSoundFile(id)?.uri
+        } catch (e: Exception) {
+            null
+        }
     }
 }

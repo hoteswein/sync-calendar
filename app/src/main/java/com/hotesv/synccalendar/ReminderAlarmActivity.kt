@@ -135,7 +135,8 @@ class ReminderAlarmActivity : AppCompatActivity() {
     }
 
     private fun startAlarmSound() {
-        val uri: Uri = Prefs.getSoundUri(this)?.let { Uri.parse(it) }
+        val uri: Uri = intent.getStringExtra("sound_uri")?.let { Uri.parse(it) }
+            ?: Prefs.getSoundUri(this)?.let { Uri.parse(it) }
             ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         try {
