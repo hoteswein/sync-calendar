@@ -173,6 +173,15 @@ class MainActivity : AppCompatActivity() {
 
         val myId = Prefs.getOrCreateDeviceId(this)
         AlarmScheduler.rescheduleAll(this, myId, reminders)
+
+        // "завершить у всех" с другого устройства — гасим у себя активное
+        // уведомление/попап, если оно как раз показано именно сейчас
+        val now = System.currentTimeMillis()
+        reminders.forEach { rem ->
+            if (rem.dismissedAt != null && now - rem.dismissedAt < 5 * 60_000L) {
+                ReminderActions.dismissMine(this, rem.id)
+            }
+        }
     }
 
     private fun deleteReminder(reminder: Reminder) {

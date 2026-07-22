@@ -62,15 +62,24 @@ class ReminderAlarmActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.textReminder).text = reminderText
 
-        findViewById<Button>(R.id.buttonDismiss).setOnClickListener {
-            ReminderActions.dismiss(this, reminderId)
+        findViewById<Button>(R.id.buttonDismissMine).setOnClickListener {
+            ReminderActions.dismissMine(this, reminderId)
             finish()
         }
-        findViewById<Button>(R.id.buttonSnooze5).setOnClickListener {
-            ReminderActions.snooze(this, reminderId, reminderText, 5)
+        findViewById<Button>(R.id.buttonDismissEveryone).setOnClickListener {
+            ReminderActions.dismissEveryone(this, reminderId)
             finish()
         }
-        findViewById<Button>(R.id.buttonSnoozeMenu).setOnClickListener { showSnoozeMenu() }
+        findViewById<Button>(R.id.buttonSnooze5Mine).setOnClickListener {
+            ReminderActions.snoozeMine(this, reminderId, reminderText, 5)
+            finish()
+        }
+        findViewById<Button>(R.id.buttonSnooze5Everyone).setOnClickListener {
+            ReminderActions.snoozeEveryone(this, reminderId, reminderText, 5)
+            finish()
+        }
+        findViewById<Button>(R.id.buttonSnoozeMenuMine).setOnClickListener { showSnoozeMenu(forEveryone = false) }
+        findViewById<Button>(R.id.buttonSnoozeMenuEveryone).setOnClickListener { showSnoozeMenu(forEveryone = true) }
 
         // попап закрывается только по одной из кнопок, не свайпом "назад"
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -87,7 +96,7 @@ class ReminderAlarmActivity : AppCompatActivity() {
         startAlarmSound()
 
         if (intent.getBooleanExtra("open_snooze_menu", false)) {
-            showSnoozeMenu()
+            showSnoozeMenu(forEveryone = true)
         }
     }
 
@@ -100,22 +109,27 @@ class ReminderAlarmActivity : AppCompatActivity() {
         km.requestDismissKeyguard(this, null)
     }
 
-    private fun showSnoozeMenu() {
+    private fun showSnoozeMenu(forEveryone: Boolean) {
         val labels = (SNOOZE_OPTIONS.map { it.second } + getString(R.string.snooze_custom)).toTypedArray()
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.snooze_dialog_title)
             .setItems(labels) { _, which ->
                 if (which < SNOOZE_OPTIONS.size) {
-                    ReminderActions.snooze(this, reminderId, reminderText, SNOOZE_OPTIONS[which].first)
+                    val minutes = SNOOZE_OPTIONS[which].first
+                    if (forEveryone) {
+                        ReminderActions.snoozeEveryone(this, reminderId, reminderText, minutes)
+                    } else {
+                        ReminderActions.snoozeMine(this, reminderId, reminderText, minutes)
+                    }
                     finish()
                 } else {
-                    showCustomSnoozeDialog()
+                    showCustomSnoozeDialog(forEveryone)
                 }
             }
             .show()
     }
 
-    private fun showCustomSnoozeDialog() {
+    private fun showCustomSnoozeDialog(forEveryone: Boolean) {
         val input = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_NUMBER
             hint = getString(R.string.snooze_custom_hint)
@@ -126,7 +140,11 @@ class ReminderAlarmActivity : AppCompatActivity() {
             .setPositiveButton(R.string.snooze_confirm) { _, _ ->
                 val minutes = input.text.toString().toIntOrNull()
                 if (minutes != null && minutes > 0) {
-                    ReminderActions.snooze(this, reminderId, reminderText, minutes)
+                    if (forEveryone) {
+                        ReminderActions.snoozeEveryone(this, reminderId, reminderText, minutes)
+                    } else {
+                        ReminderActions.snoozeMine(this, reminderId, reminderText, minutes)
+                    }
                     finish()
                 }
             }

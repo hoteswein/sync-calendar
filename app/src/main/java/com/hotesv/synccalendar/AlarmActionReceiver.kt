@@ -24,17 +24,9 @@ class AlarmActionReceiver : BroadcastReceiver() {
         when (intent.action) {
             ACTION_SNOOZE -> {
                 val minutes = intent.getIntExtra(EXTRA_MINUTES, 5)
-                ReminderActions.snooze(context, id, text, minutes)
+                ReminderActions.snoozeEveryone(context, id, text, minutes)
             }
-            else -> ReminderActions.dismiss(context, id)
+            else -> ReminderActions.dismissEveryone(context, id)
         }
-
-        // если попап с этим же напоминанием сейчас открыт поверх экрана — закрыть и его
-        context.sendBroadcast(
-            Intent(ReminderAlarmActivity.ACTION_CLOSE_POPUP).apply {
-                setPackage(context.packageName)
-                putExtra("id", id)
-            }
-        )
     }
 }

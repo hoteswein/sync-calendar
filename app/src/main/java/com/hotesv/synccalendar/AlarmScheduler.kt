@@ -55,15 +55,18 @@ object AlarmScheduler {
         }
 
         val now = System.currentTimeMillis()
-        val trigger = if (reminder.snoozedUntil != null && reminder.snoozedUntil > now) {
-            reminder.snoozedUntil
-        } else {
-            val t = triggerAtMillis(reminder)
-            if (t == null) {
-                DebugLog.add(context, "schedule: $tag — НЕ УДАЛОСЬ распарсить date/time='${reminder.date} ${reminder.time}'")
-                return
+        val localSnooze = Prefs.getLocalSnooze(context, reminder.id)
+        val trigger = when {
+            localSnooze != null && localSnooze > now -> localSnooze
+            reminder.snoozedUntil != null && reminder.snoozedUntil > now -> reminder.snoozedUntil
+            else -> {
+                val t = triggerAtMillis(reminder)
+                if (t == null) {
+                    DebugLog.add(context, "schedule: $tag — НЕ УДАЛОСЬ распарсить date/time='${reminder.date} ${reminder.time}'")
+                    return
+                }
+                t
             }
-            t
         }
         if (trigger <= now) {
             DebugLog.add(context, "schedule: $tag — trigger=${fmt(trigger)} уже в прошлом (now=${fmt(now)}), пропущен")

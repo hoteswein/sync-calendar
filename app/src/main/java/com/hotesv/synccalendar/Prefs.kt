@@ -15,6 +15,7 @@ object Prefs {
     private const val KEY_SOUND_URI = "sound_uri"
     private const val KEY_SERVICE_ENABLED = "reliability_service_enabled"
     private const val KEY_FILE_LOGGING = "file_logging_enabled"
+    private const val KEY_OVERLAY_MODE = "overlay_mode_enabled"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -65,5 +66,26 @@ object Prefs {
 
     fun setFileLoggingEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_FILE_LOGGING, enabled).apply()
+    }
+
+    // ---------- локальный снюз "у меня" — намеренно НЕ синхронизируется ----------
+
+    fun getLocalSnooze(context: Context, reminderId: String): Long? {
+        val v = prefs(context).getLong("local_snooze_$reminderId", -1L)
+        return if (v > 0) v else null
+    }
+
+    fun setLocalSnooze(context: Context, reminderId: String, untilMillis: Long?) {
+        val editor = prefs(context).edit()
+        if (untilMillis == null) editor.remove("local_snooze_$reminderId")
+        else editor.putLong("local_snooze_$reminderId", untilMillis)
+        editor.apply()
+    }
+
+    fun isOverlayModeEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_OVERLAY_MODE, false)
+
+    fun setOverlayModeEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_OVERLAY_MODE, enabled).apply()
     }
 }

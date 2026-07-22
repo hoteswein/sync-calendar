@@ -44,7 +44,8 @@ data class Reminder(
     val createdBy: String,
     val createdAt: String,
     val enabled: Boolean = true,        // выключенное напоминание хранится, но не звонит
-    val snoozedUntil: Long? = null      // epoch millis; null = не отложено сейчас
+    val snoozedUntil: Long? = null,     // epoch millis; null = не отложено сейчас (общее, синхронизируется)
+    val dismissedAt: Long? = null       // epoch millis; сигнал "погасить активное уведомление у всех"
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
@@ -56,6 +57,7 @@ data class Reminder(
         put("created_at", createdAt)
         put("enabled", enabled)
         if (snoozedUntil != null) put("snoozed_until", snoozedUntil) else remove("snoozed_until")
+        if (dismissedAt != null) put("dismissed_at", dismissedAt) else remove("dismissed_at")
     }
 
     companion object {
@@ -75,7 +77,8 @@ data class Reminder(
                 createdAt = o.optString("created_at", ""),
                 // старые файлы без этих полей — enabled по умолчанию true, не отложено
                 enabled = if (o.has("enabled")) o.optBoolean("enabled", true) else true,
-                snoozedUntil = if (o.has("snoozed_until")) o.optLong("snoozed_until") else null
+                snoozedUntil = if (o.has("snoozed_until")) o.optLong("snoozed_until") else null,
+                dismissedAt = if (o.has("dismissed_at")) o.optLong("dismissed_at") else null
             )
         }
 

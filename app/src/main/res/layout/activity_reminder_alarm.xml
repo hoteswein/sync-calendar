@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:padding="24dp">
 
     <TextView
         android:id="@+id/textReminder"
@@ -13,34 +13,98 @@
         android:layout_weight="1"
         android:gravity="center"
         android:textColor="@color/text"
-        android:textSize="28sp"
+        android:textSize="26sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/buttonSnoozeMenu"
+    <!-- Отложить на... -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:backgroundTint="@color/surface2"
-        android:textColor="@color/text"
-        android:text="@string/snooze_pick" />
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/buttonSnooze5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:backgroundTint="@color/teal"
-        android:textColor="@color/bg"
-        android:text="@string/snooze_5min" />
+        <Button
+            android:id="@+id/buttonSnoozeMenuMine"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:backgroundTint="@color/surface2"
+            android:textColor="@color/text"
+            android:textSize="12sp"
+            android:text="@string/snooze_pick_mine" />
 
-    <Button
-        android:id="@+id/buttonDismiss"
+        <Button
+            android:id="@+id/buttonSnoozeMenuEveryone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:backgroundTint="@color/surface2"
+            android:textColor="@color/text"
+            android:textSize="12sp"
+            android:text="@string/snooze_pick_everyone" />
+    </LinearLayout>
+
+    <!-- Отложить на 5 минут -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/amber"
-        android:textColor="@color/bg"
-        android:textStyle="bold"
-        android:text="@string/dismiss" />
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonSnooze5Mine"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:backgroundTint="@color/teal"
+            android:textColor="@color/bg"
+            android:textSize="12sp"
+            android:text="@string/snooze_5min_mine" />
+
+        <Button
+            android:id="@+id/buttonSnooze5Everyone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:backgroundTint="@color/teal"
+            android:textColor="@color/bg"
+            android:textSize="12sp"
+            android:text="@string/snooze_5min_everyone" />
+    </LinearLayout>
+
+    <!-- Завершить -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonDismissMine"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:backgroundTint="@color/amber"
+            android:textColor="@color/bg"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:text="@string/dismiss_mine" />
+
+        <Button
+            android:id="@+id/buttonDismissEveryone"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:backgroundTint="@color/amber"
+            android:textColor="@color/bg"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:text="@string/dismiss_everyone" />
+    </LinearLayout>
 
 </LinearLayout>
