@@ -68,4 +68,8 @@
     <string name="reminder_sound_choose">Выбрать мелодию…</string>
     <string name="reminder_sound_reset">Сделать обычной</string>
     <string name="reminder_sound_dialog_title">Мелодия напоминания</string>
+
+    <string name="settings_overlay_label">Попап поверх активных приложений</string>
+    <string name="settings_overlay_hint">Показывает окно напоминания даже поверх игр в полноэкранном режиме — не только на заблокированном экране. Требует разрешение «Отображение поверх других приложений».</string>
+    <string name="overlay_permission_needed">Сначала разреши «Отображение поверх других приложений» в открывшихся настройках</string>
 </resources>

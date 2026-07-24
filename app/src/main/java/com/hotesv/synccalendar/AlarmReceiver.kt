@@ -100,6 +100,21 @@ class AlarmReceiver : BroadcastReceiver() {
         // на конкретном устройстве/прошивке.
 
         NotificationManagerCompat.from(context).notify(id.hashCode(), builder.build())
+
+        // Экран разблокирован (значит full-screen intent сам не всплывёт —
+        // так задумано в Android) и включён overlay-режим с разрешением —
+        // показываем поверх активного приложения (игры и т.п.) отдельно.
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+        val locked = km.isKeyguardLocked
+        if (!locked && Prefs.isOverlayModeEnabled(context) && android.provider.Settings.canDrawOverlays(context)) {
+            val overlayIntent = Intent(context, OverlayAlarmService::class.java).apply {
+                putExtra("id", id)
+                putExtra("text", text)
+                effectiveSoundUri?.let { putExtra("sound_uri", it.toString()) }
+            }
+            context.startService(overlayIntent)
+            DebugLog.add(context, "overlay: запущен для id=${id.take(6)} (экран разблокирован)")
+        }
     }
 
     /** Ищет свой звук этого напоминания в sounds/<id>.* общей папки.

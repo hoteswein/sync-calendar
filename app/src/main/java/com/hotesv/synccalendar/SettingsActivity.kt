@@ -88,6 +88,28 @@ class SettingsActivity : AppCompatActivity() {
         updateExactAlarmRow()
         updateBatteryRow()
         updateAutostartRowVisibility()
+        // если разрешение дали/забрали в системных настройках — отражаем честно
+        val overlaySwitch = findViewById<SwitchCompat>(R.id.overlaySwitch)
+        val overlayGranted = android.provider.Settings.canDrawOverlays(this)
+        if (!overlayGranted && Prefs.isOverlayModeEnabled(this)) {
+            Prefs.setOverlayModeEnabled(this, false)
+        }
+        overlaySwitch.setOnCheckedChangeListener(null)
+        overlaySwitch.isChecked = overlayGranted && Prefs.isOverlayModeEnabled(this)
+        overlaySwitch.setOnCheckedChangeListener { switchView, checked ->
+            if (checked && !android.provider.Settings.canDrawOverlays(this)) {
+                switchView.isChecked = false
+                Toast.makeText(this, R.string.overlay_permission_needed, Toast.LENGTH_LONG).show()
+                try {
+                    startActivity(Intent(
+                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:$packageName")
+                    ))
+                } catch (e: Exception) { }
+            } else {
+                Prefs.setOverlayModeEnabled(this, checked)
+            }
+        }
     }
 
     private fun updateFolderRow() {
