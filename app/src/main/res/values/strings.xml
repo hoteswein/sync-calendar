@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">sync.calendar</string>
+    <string name="app_name">Calendar S</string>
     <string name="add_reminder">Напоминание</string>
     <string name="save">Сохранить</string>
     <string name="cancel">Отмена</string>
