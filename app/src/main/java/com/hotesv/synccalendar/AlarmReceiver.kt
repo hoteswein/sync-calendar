@@ -33,7 +33,27 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private fun handleAlarm(context: Context, id: String, text: String) {
         val effectiveSoundUri = reminderSoundUri(context, id)
-        val channelId = NotificationChannelHelper.ensureChannel(context, effectiveSoundUri?.toString() ?: Prefs.getSoundUri(context))
+        val effectiveSoundUriString = effectiveSoundUri?.toString() ?: Prefs.getSoundUri(context)
+
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+        val locked = km.isKeyguardLocked
+        val canFsi = if (android.os.Build.VERSION.SDK_INT >= 34) {
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager).canUseFullScreenIntent()
+        } else {
+            true
+        }
+        val overlayWillShow = !locked && Prefs.isOverlayModeEnabled(context) && android.provider.Settings.canDrawOverlays(context)
+        val fsiWillAutoShow = locked && canFsi
+        // если попап и так покажется сам немедленно — звук берёт на себя
+        // его собственный MediaPlayer, канал уведомления должен молчать,
+        // иначе играет дважды почти одновременно ("эхо" на десятые доли сек)
+        val popupWillAutoShow = fsiWillAutoShow || overlayWillShow
+
+        val channelId = if (popupWillAutoShow) {
+            NotificationChannelHelper.ensureSilentChannel(context)
+        } else {
+            NotificationChannelHelper.ensureChannel(context, effectiveSoundUriString)
+        }
 
         // полноэкранная активность поверх блокировки — на неё же ведёт
         // и обычный тап по уведомлению, и кнопка "Отложить на..."
@@ -101,12 +121,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         NotificationManagerCompat.from(context).notify(id.hashCode(), builder.build())
 
-        // Экран разблокирован (значит full-screen intent сам не всплывёт —
-        // так задумано в Android) и включён overlay-режим с разрешением —
-        // показываем поверх активного приложения (игры и т.п.) отдельно.
-        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
-        val locked = km.isKeyguardLocked
-        if (!locked && Prefs.isOverlayModeEnabled(context) && android.provider.Settings.canDrawOverlays(context)) {
+        if (overlayWillShow) {
             val overlayIntent = Intent(context, OverlayAlarmService::class.java).apply {
                 putExtra("id", id)
                 putExtra("text", text)

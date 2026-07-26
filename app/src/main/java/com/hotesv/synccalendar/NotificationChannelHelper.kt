@@ -19,6 +19,7 @@ import android.net.Uri
  *  конкретного напоминания (свой файл в sounds/ или общий). */
 object NotificationChannelHelper {
     private const val PREFIX = "reminders_v"
+    private const val SILENT_ID = "reminders_silent"
 
     fun channelIdForUri(soundUriString: String?): String =
         PREFIX + (soundUriString?.hashCode() ?: 0)
@@ -32,6 +33,18 @@ object NotificationChannelHelper {
             manager.createNotificationChannel(buildChannel(id, soundUriString))
         }
         return id
+    }
+
+    /** Без звука канала вообще — для случаев, когда попап (Activity или
+     *  overlay) и так покажется сам немедленно, и звук берёт на себя наш
+     *  собственный MediaPlayer в нём. Не даём звуку сыграть дважды почти
+     *  одновременно (эффект "эха" на десятые доли секунды). */
+    fun ensureSilentChannel(context: Context): String {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel(SILENT_ID) == null) {
+            manager.createNotificationChannel(buildSilentChannel())
+        }
+        return SILENT_ID
     }
 
     fun onSoundChanged(context: Context, previousChannelId: String) {
@@ -51,6 +64,14 @@ object NotificationChannelHelper {
 
         return NotificationChannel(id, "Напоминания", NotificationManager.IMPORTANCE_HIGH).apply {
             setSound(soundUri, attrs)
+            enableLights(true)
+            enableVibration(true)
+        }
+    }
+
+    private fun buildSilentChannel(): NotificationChannel {
+        return NotificationChannel(SILENT_ID, "Напоминания (звук через попап)", NotificationManager.IMPORTANCE_HIGH).apply {
+            setSound(null, null)
             enableLights(true)
             enableVibration(true)
         }
