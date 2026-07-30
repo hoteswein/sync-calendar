@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
@@ -16,6 +18,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -57,6 +61,8 @@ class SettingsActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowAutostart).setOnClickListener { openAutostart() }
         findViewById<View>(R.id.rowDebugLog).setOnClickListener { showDebugLog() }
         findViewById<View>(R.id.rowOtherLogs).setOnClickListener { showOtherLogsPicker() }
+        findViewById<View>(R.id.rowTestChannel).setOnClickListener { testChannelSound() }
+        findViewById<View>(R.id.rowTestPlayer).setOnClickListener { testMediaPlayerSound() }
 
         findViewById<SwitchCompat>(R.id.fileLogSwitch).apply {
             isChecked = Prefs.isFileLoggingEnabled(this@SettingsActivity)
@@ -287,5 +293,60 @@ class SettingsActivity : AppCompatActivity() {
             .setView(scrollView)
             .setPositiveButton(R.string.debug_log_close, null)
             .show()
+    }
+
+    // ---------- тест звука: изолируем канал vs MediaPlayer ----------
+
+    private var testMediaPlayer: MediaPlayer? = null
+
+    private fun testChannelSound() {
+        val soundUriString = Prefs.getSoundUri(this)
+        val channelId = NotificationChannelHelper.ensureChannel(this, soundUriString)
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_alarm)
+            .setContentTitle("Тест: звук канала")
+            .setContentText("Если слышишь эхо именно тут — дело в канале уведомления")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(this).notify(999999, notification)
+        Toast.makeText(this, "Отправлено — слушай", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun testMediaPlayerSound() {
+        stopTestPlayer()
+        val uri: Uri = Prefs.getSoundUri(this)?.let { Uri.parse(it) }
+            ?: RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        try {
+            testMediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                setDataSource(this@SettingsActivity, uri)
+                isLooping = false
+                prepare()
+                start()
+            }
+            Toast.makeText(this, "Играет напрямую через MediaPlayer — слушай", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Не удалось воспроизвести: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun stopTestPlayer() {
+        testMediaPlayer?.let {
+            try { if (it.isPlaying) it.stop() } catch (e: Exception) { }
+            it.release()
+        }
+        testMediaPlayer = null
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopTestPlayer()
     }
 }

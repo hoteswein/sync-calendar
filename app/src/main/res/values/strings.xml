@@ -72,4 +72,9 @@
     <string name="settings_overlay_label">Попап поверх активных приложений</string>
     <string name="settings_overlay_hint">Показывает окно напоминания даже поверх игр в полноэкранном режиме — не только на заблокированном экране. Требует разрешение «Отображение поверх других приложений».</string>
     <string name="overlay_permission_needed">Сначала разреши «Отображение поверх других приложений» в открывшихся настройках</string>
+
+    <string name="settings_test_channel_label">Тест: звук ТОЛЬКО через канал уведомления</string>
+    <string name="settings_test_channel_hint">Обычное уведомление со звуком — так же, как играет система у SMS/мессенджеров</string>
+    <string name="settings_test_player_label">Тест: звук ТОЛЬКО через наш MediaPlayer</string>
+    <string name="settings_test_player_hint">Без уведомления вообще — ровно то же воспроизведение, что в попапе</string>
 </resources>
