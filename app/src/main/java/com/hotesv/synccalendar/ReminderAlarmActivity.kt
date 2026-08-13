@@ -11,10 +11,12 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
+import android.view.Gravity
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -130,26 +132,42 @@ class ReminderAlarmActivity : AppCompatActivity() {
     }
 
     private fun showCustomSnoozeDialog(forEveryone: Boolean) {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.snooze_custom_hint)
+        val picker = NumberPicker(this).apply {
+            minValue = 1
+            maxValue = 999
+            value = 10
+            wrapSelectorWheel = false
+            descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
         }
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.snooze_custom)
-            .setView(input)
+            .setView(customSnoozeDialogView(picker))
             .setPositiveButton(R.string.snooze_confirm) { _, _ ->
-                val minutes = input.text.toString().toIntOrNull()
-                if (minutes != null && minutes > 0) {
-                    if (forEveryone) {
-                        ReminderActions.snoozeEveryone(this, reminderId, reminderText, minutes)
-                    } else {
-                        ReminderActions.snoozeMine(this, reminderId, reminderText, minutes)
-                    }
-                    finish()
+                if (forEveryone) {
+                    ReminderActions.snoozeEveryone(this, reminderId, reminderText, picker.value)
+                } else {
+                    ReminderActions.snoozeMine(this, reminderId, reminderText, picker.value)
                 }
+                finish()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /** NumberPicker вместо EditText: попап живёт поверх lock-screen окна
+     *  (setShowWhenLocked), а системная клавиатура там периодически валит
+     *  процесс при фокусе на поле ввода. FOCUS_BLOCK_DESCENDANTS запрещает
+     *  внутреннему полю пикера получать фокус — клавиатура не вызывается
+     *  вообще, даже тапом по числу. */
+    private fun customSnoozeDialogView(picker: NumberPicker): LinearLayout {
+        val density = resources.displayMetrics.density
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+            addView(TextView(context).apply { text = context.getString(R.string.snooze_custom_hint) })
+            addView(picker)
+        }
     }
 
     private fun startAlarmSound() {

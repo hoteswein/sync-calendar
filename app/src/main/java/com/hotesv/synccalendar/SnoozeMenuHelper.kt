@@ -1,9 +1,12 @@
 package com.hotesv.synccalendar
 
 import android.content.Context
-import android.text.InputType
+import android.view.Gravity
+import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.NumberPicker
+import android.widget.TextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /** Общая логика меню "Отложить на..." — и попап-активность (заблокированный
@@ -48,19 +51,27 @@ object SnoozeMenuHelper {
         asOverlay: Boolean,
         onDone: () -> Unit
     ) {
-        val input = EditText(context).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = context.getString(R.string.snooze_custom_hint)
+        val picker = NumberPicker(context).apply {
+            minValue = 1
+            maxValue = 999
+            value = 10
+            wrapSelectorWheel = false
+            descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        }
+        val density = context.resources.displayMetrics.density
+        val view = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding((24 * density).toInt(), (8 * density).toInt(), (24 * density).toInt(), 0)
+            addView(TextView(context).apply { text = context.getString(R.string.snooze_custom_hint) })
+            addView(picker)
         }
         val dialog = MaterialAlertDialogBuilder(context)
             .setTitle(R.string.snooze_custom)
-            .setView(input)
+            .setView(view)
             .setPositiveButton(R.string.snooze_confirm) { _, _ ->
-                val minutes = input.text.toString().toIntOrNull()
-                if (minutes != null && minutes > 0) {
-                    apply(context, reminderId, reminderText, forEveryone, minutes)
-                    onDone()
-                }
+                apply(context, reminderId, reminderText, forEveryone, picker.value)
+                onDone()
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
