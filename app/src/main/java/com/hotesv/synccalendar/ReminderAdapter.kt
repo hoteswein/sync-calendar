@@ -55,13 +55,27 @@ class ReminderAdapter(
         }
 
         val now = System.currentTimeMillis()
-        if (r.snoozedUntil != null && r.snoozedUntil > now) {
-            val remainingSec = (r.snoozedUntil - now) / 1000
+        val localSnooze = Prefs.getLocalSnooze(holder.itemView.context, r.id)
+        val effectiveUntil: Long?
+        val mineOnly: Boolean
+        if (localSnooze != null && localSnooze > now) {
+            effectiveUntil = localSnooze
+            mineOnly = true
+        } else if (r.snoozedUntil != null && r.snoozedUntil > now) {
+            effectiveUntil = r.snoozedUntil
+            mineOnly = false
+        } else {
+            effectiveUntil = null
+            mineOnly = false
+        }
+        if (effectiveUntil != null) {
+            val remainingSec = (effectiveUntil - now) / 1000
             val min = remainingSec / 60
             val sec = remainingSec % 60
-            val until = Instant.ofEpochMilli(r.snoozedUntil).atZone(ZoneId.systemDefault()).format(timeFmt)
+            val until = Instant.ofEpochMilli(effectiveUntil).atZone(ZoneId.systemDefault()).format(timeFmt)
+            val who = if (mineOnly) "у меня" else "у всех"
             holder.snoozeStatus.visibility = android.view.View.VISIBLE
-            holder.snoozeStatus.text = "⏰ Отложено до $until (ещё ${min} мин ${sec} сек) — нажми, чтобы отменить"
+            holder.snoozeStatus.text = "⏰ Отложено $who до $until (ещё ${min} мин ${sec} сек) — нажми, чтобы отменить"
             holder.snoozeStatus.setOnClickListener { onCancelSnooze(r) }
         } else {
             holder.snoozeStatus.visibility = android.view.View.GONE

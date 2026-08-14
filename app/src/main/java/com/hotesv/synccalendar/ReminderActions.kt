@@ -4,6 +4,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /** Логика кнопок попапа/уведомления. Каждое действие есть в двух видах:
  *  "у меня" — трогает только это устройство, никогда не пишет в общий
@@ -32,12 +36,24 @@ object ReminderActions {
         return SyncRepository(context, Uri.parse(folderUriString))
     }
 
-    /** Завершить только на этом устройстве — просто гасим уведомление/попап,
-     *  общий файл не трогаем. */
-    fun dismissMine(context: Context, id: String) {
+    private fun formatTime(millis: Long): String =
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(millis))
+
+    private fun toast(context: Context, message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun clearLocalState(context: Context, id: String) {
         cancelLocalNotification(context, id)
         closePopupEverywhereOnThisDevice(context, id)
         Prefs.setLocalSnooze(context, id, null)
+    }
+
+    /** Завершить только на этом устройстве — просто гасим уведомление/попап,
+     *  общий файл не трогаем. */
+    fun dismissMine(context: Context, id: String) {
+        clearLocalState(context, id)
+        toast(context, "Скрыто у меня")
         DebugLog.add(context, "dismissMine: ${id.take(6)}")
     }
 
@@ -45,10 +61,11 @@ object ReminderActions {
      *  в общий файл: остальные устройства погасят своё активное
      *  уведомление при следующем собственном обновлении. */
     fun dismissEveryone(context: Context, id: String) {
-        dismissMine(context, id)
+        clearLocalState(context, id)
         val repo = repoOrNull(context) ?: return
         val reminder = repo.getReminder(id) ?: return
         repo.saveReminder(reminder.copy(dismissedAt = System.currentTimeMillis()))
+        toast(context, "Скрыто у всех")
         DebugLog.add(context, "dismissEveryone: ${id.take(6)}")
     }
 
@@ -62,6 +79,7 @@ object ReminderActions {
         val repo = repoOrNull(context)
         val reminder = repo?.getReminder(id) ?: Reminder.create(text, "", "", emptyList(), "", id)
         AlarmScheduler.schedule(context, reminder)
+        toast(context, "Отложено у меня до ${formatTime(until)}")
         DebugLog.add(context, "snoozeMine: ${id.take(6)} на $minutes мин")
     }
 
@@ -74,9 +92,11 @@ object ReminderActions {
 
         val repo = repoOrNull(context) ?: return
         val reminder = repo.getReminder(id) ?: return
-        val updated = reminder.copy(snoozedUntil = System.currentTimeMillis() + minutes * 60_000L)
+        val until = System.currentTimeMillis() + minutes * 60_000L
+        val updated = reminder.copy(snoozedUntil = until)
         repo.saveReminder(updated)
         AlarmScheduler.schedule(context, updated)
+        toast(context, "Отложено у всех до ${formatTime(until)}")
         DebugLog.add(context, "snoozeEveryone: ${id.take(6)} на $minutes мин")
     }
 }

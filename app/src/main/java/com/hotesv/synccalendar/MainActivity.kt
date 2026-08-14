@@ -199,6 +199,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cancelSnooze(reminder: Reminder) {
+        Prefs.setLocalSnooze(this, reminder.id, null)
         val updated = reminder.copy(snoozedUntil = null)
         repo?.saveReminder(updated)
         AlarmScheduler.schedule(this, updated)
