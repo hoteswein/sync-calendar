@@ -26,6 +26,7 @@
     <string name="snooze_custom">Написать вручную</string>
     <string name="snooze_custom_hint">Минут</string>
     <string name="snooze_confirm">Отложить</string>
+    <string name="banner_show_full">Показать полностью</string>
 
     <string name="choose_sound">Звук напоминания</string>
     <string name="fsi_status_ok">✓ Полноэкранные напоминания разрешены</string>

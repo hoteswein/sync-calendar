@@ -12,6 +12,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
@@ -58,11 +59,18 @@ class OverlayAlarmService : Service() {
         return START_NOT_STICKY
     }
 
+    /** Компактный баннер сверху экрана — раньше overlay был точной копией
+     *  полноэкранного попапа (activity_reminder_alarm, MATCH_PARENT), из-за
+     *  чего перекрывал вообще всё под собой. Теперь: overlay_banner,
+     *  WRAP_CONTENT + Gravity.TOP, без двух кнопок меню "Отложить на…" —
+     *  для точного ввода есть полноэкранный попап/сам список напоминаний,
+     *  а баннер — только для быстрых действий, чтобы оставаться компактным. */
     private fun showOverlay() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val view = LayoutInflater.from(this).inflate(R.layout.activity_reminder_alarm, null)
+        val view = LayoutInflater.from(this).inflate(R.layout.overlay_banner, null)
 
-        view.findViewById<TextView>(R.id.textReminder).text = reminderText
+        val textView = view.findViewById<TextView>(R.id.textReminder)
+        textView.text = reminderText
 
         view.findViewById<Button>(R.id.buttonDismissMine).setOnClickListener {
             ReminderActions.dismissMine(this, reminderId)
@@ -80,21 +88,35 @@ class OverlayAlarmService : Service() {
             ReminderActions.snoozeEveryone(this, reminderId, reminderText, 5)
             hideOverlay()
         }
-        view.findViewById<Button>(R.id.buttonSnoozeMenuMine).setOnClickListener {
-            SnoozeMenuHelper.show(this, reminderId, reminderText, forEveryone = false, asOverlay = true) { hideOverlay() }
-        }
-        view.findViewById<Button>(R.id.buttonSnoozeMenuEveryone).setOnClickListener {
-            SnoozeMenuHelper.show(this, reminderId, reminderText, forEveryone = true, asOverlay = true) { hideOverlay() }
-        }
 
         val type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             type,
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             PixelFormat.TRANSLUCENT
         )
+        params.gravity = Gravity.TOP
+
+        // Текст обрезан в 5 строк (XML). Если реально обрезался — показываем
+        // кнопку "показать полностью"; тап снимает лимит и просит
+        // WindowManager перемерить окно (WRAP_CONTENT сам не всегда
+        // подхватывает изменение высоты у overlay-окна).
+        val expandButton = view.findViewById<TextView>(R.id.bannerExpand)
+        expandButton.setOnClickListener {
+            textView.maxLines = Int.MAX_VALUE
+            textView.ellipsize = null
+            expandButton.visibility = View.GONE
+            windowManager?.updateViewLayout(view, params)
+        }
+        textView.post {
+            val layout = textView.layout
+            val lastLine = textView.maxLines - 1
+            val truncated = layout != null && lastLine < layout.lineCount && layout.getEllipsisCount(lastLine) > 0
+            expandButton.visibility = if (truncated) View.VISIBLE else View.GONE
+        }
+
         try {
             windowManager?.addView(view, params)
             overlayView = view
