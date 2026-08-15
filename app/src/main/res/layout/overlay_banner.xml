@@ -74,6 +74,42 @@
                 android:text="@string/snooze_5min_everyone" />
         </LinearLayout>
 
+        <!-- Точный выбор длительности (весь список + "вручную") -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonSnoozeMenuMine"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:minHeight="0dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:backgroundTint="@color/teal"
+                android:textColor="@color/bg"
+                android:textSize="11sp"
+                android:text="@string/snooze_pick_mine" />
+
+            <Button
+                android:id="@+id/buttonSnoozeMenuEveryone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:minHeight="0dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:backgroundTint="@color/teal"
+                android:textColor="@color/bg"
+                android:textSize="11sp"
+                android:text="@string/snooze_pick_everyone" />
+        </LinearLayout>
+
         <!-- Завершить -->
         <LinearLayout
             android:layout_width="match_parent"

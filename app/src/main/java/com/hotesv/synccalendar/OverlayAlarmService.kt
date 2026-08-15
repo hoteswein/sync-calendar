@@ -62,9 +62,10 @@ class OverlayAlarmService : Service() {
     /** Компактный баннер сверху экрана — раньше overlay был точной копией
      *  полноэкранного попапа (activity_reminder_alarm, MATCH_PARENT), из-за
      *  чего перекрывал вообще всё под собой. Теперь: overlay_banner,
-     *  WRAP_CONTENT + Gravity.TOP, без двух кнопок меню "Отложить на…" —
-     *  для точного ввода есть полноэкранный попап/сам список напоминаний,
-     *  а баннер — только для быстрых действий, чтобы оставаться компактным. */
+     *  WRAP_CONTENT + Gravity.TOP — компактно по высоте (карточка + текст
+     *  в 5 строк + 3 ряда кнопок), но весь функционал сохранён: quick
+     *  snooze на 5 мин, точный выбор длительности через SnoozeMenuHelper,
+     *  завершить — каждое в варианте "у меня"/"у всех". */
     private fun showOverlay() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val view = LayoutInflater.from(this).inflate(R.layout.overlay_banner, null)
@@ -87,6 +88,12 @@ class OverlayAlarmService : Service() {
         view.findViewById<Button>(R.id.buttonSnooze5Everyone).setOnClickListener {
             ReminderActions.snoozeEveryone(this, reminderId, reminderText, 5)
             hideOverlay()
+        }
+        view.findViewById<Button>(R.id.buttonSnoozeMenuMine).setOnClickListener {
+            SnoozeMenuHelper.show(this, reminderId, reminderText, forEveryone = false, asOverlay = true) { hideOverlay() }
+        }
+        view.findViewById<Button>(R.id.buttonSnoozeMenuEveryone).setOnClickListener {
+            SnoozeMenuHelper.show(this, reminderId, reminderText, forEveryone = true, asOverlay = true) { hideOverlay() }
         }
 
         val type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
